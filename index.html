@@ -212,18 +212,16 @@
     const defaultLatitude = 37.5665;
     const defaultLongitude = 126.9780;
 
-    // [개선 1] 무료 시설 위주의 명확한 검색 키워드 설정
+    // 지정해주신 키워드로만 설정
     const categoryKeywords = {
-      food: ['공유냉장고', '무료급식소', '무료 먹거리'],
-      play: ['시민공원', '근린공원', '무료박물관', '무료미술관', '국립박물관'],
-      rest: ['시립도서관', '구립도서관', '청소년문화의집', '청소년쉼터', '공공도서관']
+      food: ['공유냉장고', '무료 급식소', '무료급식소'],
+      play: ['공원', '무료 박물관', '무료박물관'],
+      rest: ['도서관', '청소년 문화의 집', '청소년문화의집', '청소년 쉼터', '청소년쉼터']
     };
 
-    // [개선 2] 입장료를 받거나 무료가 아닌 유료/상업/학교 시설 무조건 제외 단어
+    // 부적절한 장소(학교, 골프장 등) 필터링 단어 목록
     const excludedCategories = [
-      '골프장', '골프연습장', '학교', '초등학교', '중학교', '고등학교', '대학교',
-      '테마파크', '워터파크', '키즈카페', '아쿠아리움', '유료', '수목원', '놀이동산',
-      '카페', '커피전문점', '음식점', '뷔페', '학원', '숙박', '호텔'
+      '골프장', '골프연습장', '학교', '초등학교', '중학교', '고등학교', '대학교'
     ];
 
     // 상태 제어 변수
@@ -339,7 +337,7 @@
             infoWindow.open(map, currentMarker);
           });
 
-          showMessage("내 위치 주변의 무료 시설을 검색합니다.");
+          showMessage("내 위치 주변 시설을 검색합니다.");
           searchCategory(currentCategory);
         },
         function (error) {
@@ -387,17 +385,16 @@
       searchCategory(categoryKey);
     }
 
-    // [검증 함수] 장소 이름이나 카테고리에 유료/학교/상업 단어가 있는지 엄격 검사
-    function isFreeFacility(place) {
+    // 골프장, 학교 등 부적절한 장소 필터링
+    function filterValidPlaces(place) {
       const category = place.category_name || "";
       const placeName = place.place_name || "";
 
-      // 유료 키워드가 포함되어 있으면 제외 (false)
-      const hasExcludedCategory = excludedCategories.some(word => 
+      const isExcluded = excludedCategories.some(word => 
         category.includes(word) || placeName.includes(word)
       );
 
-      return !hasExcludedCategory;
+      return !isExcluded;
     }
 
     // 카테고리 키워드 기반 자동 검색
@@ -413,7 +410,7 @@
       let combinedResults = [];
       let completedRequests = 0;
 
-      showMessage("100% 무료 장소를 선별하여 검색 중입니다...");
+      showMessage("지정한 키워드로 주변 시설을 검색 중입니다...");
 
       keywords.forEach(keyword => {
         places.keywordSearch(keyword, function (data, status) {
@@ -427,22 +424,22 @@
 
           if (completedRequests === keywords.length) {
             if (combinedResults.length > 0) {
-              // 1. ID 기준 중복 장소 제거
+              // 중복 장소 제거
               const uniqueResults = Array.from(
                 new Map(combinedResults.map(item => [item.id, item])).values()
               );
 
-              // 2. 유료 및 학교/상업 시설 정밀 필터링
-              const freeResults = uniqueResults.filter(isFreeFacility);
+              // 학교/골프장 등 부적절한 카테고리 차단
+              const validResults = uniqueResults.filter(filterValidPlaces);
 
-              if (freeResults.length > 0) {
-                displayPlaces(freeResults);
-                showMessage(`총 ${freeResults.length}개의 무료 시설을 찾았습니다.`);
+              if (validResults.length > 0) {
+                displayPlaces(validResults);
+                showMessage(`총 ${validResults.length}개의 시설을 찾았습니다.`);
               } else {
-                showMessage("주변에 조건에 맞는 무료 이용 시설이 없습니다. 다른 지역을 검색해보세요.");
+                showMessage("주변에 조건에 맞는 시설이 없습니다.");
               }
             } else {
-              showMessage("주변에 검색된 무료 시설이 없습니다.");
+              showMessage("주변에 검색된 시설이 없습니다.");
             }
           }
         }, {
@@ -462,7 +459,7 @@
 
       if (!map || !places) return;
 
-      showMessage(`'${keyword}' 무료 검색 중...`);
+      showMessage(`'${keyword}' 검색 중...`);
       const requestNumber = ++searchNumber;
 
       places.keywordSearch(keyword, function (data, status) {
@@ -472,21 +469,20 @@
         resultList.innerHTML = "";
 
         if (status === kakao.maps.services.Status.OK) {
-          // 직접 검색 시에도 유료/상업 단어 자동 필터링
-          const filteredData = data.filter(isFreeFacility);
+          const validResults = data.filter(filterValidPlaces);
 
-          if (filteredData.length > 0) {
-            displayPlaces(filteredData);
+          if (validResults.length > 0) {
+            displayPlaces(validResults);
 
             const firstBounds = new kakao.maps.LatLngBounds();
-            filteredData.forEach(item => {
+            validResults.forEach(item => {
               firstBounds.extend(new kakao.maps.LatLng(Number(item.y), Number(item.x)));
             });
             map.setBounds(firstBounds);
 
-            showMessage(`검색 결과 무료 시설 ${filteredData.length}개를 찾았습니다.`);
+            showMessage(`검색 결과 ${validResults.length}개를 찾았습니다.`);
           } else {
-            showMessage("검색된 장소 중 무료 이용 조건에 맞는 장소가 없습니다.");
+            showMessage("검색 결과 중 올바른 장소가 없습니다.");
           }
 
         } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
