@@ -149,7 +149,7 @@
       background-color: #e9ecef;
     }
 
-    /* 모바일 반응형 화면 스타일 */
+    /* 모바일 반응형 레이아웃 */
     @media (max-width: 600px) {
       .container {
         flex-direction: column;
@@ -173,18 +173,18 @@
 
   <div class="container">
 
-    <!-- 왼쪽 설정 및 리스트 사이드바 -->
+    <!-- 왼쪽 사이드바 -->
     <div class="sidebar">
       <h2>💵 0원으로 살아남기</h2>
 
-      <!-- 카테고리 선택 탭 -->
+      <!-- 카테고리 선택 탭 (먹거리 / 놀거리 / 쉼터·공부) -->
       <div class="category-tabs">
         <button class="tab-button active" onclick="switchCategory('food', event)">🍔 먹거리</button>
         <button class="tab-button" onclick="switchCategory('play', event)">🎡 놀거리</button>
         <button class="tab-button" onclick="switchCategory('rest', event)">📖 쉼터·공부</button>
       </div>
 
-      <!-- 직접 주소/장소 검색창 -->
+      <!-- 주소 및 장소 직접 검색창 -->
       <div class="search-box">
         <input
           type="text"
@@ -199,27 +199,27 @@
       <ul id="resultList"></ul>
     </div>
 
-    <!-- 오른쪽 지도 화면 -->
+    <!-- 오른쪽 카카오 지도 -->
     <div id="map"></div>
 
   </div>
 
   <script>
-    // 제공받은 카카오 JavaScript API 키
+    // 카카오 JavaScript API 키
     const kakaoKey = "73094142e563644fed0992b49f2f923a";
 
-    // 기본 위치 (서울시청 좌표)
+    // 기본 좌표 (서울시청)
     const defaultLatitude = 37.5665;
     const defaultLongitude = 126.9780;
 
-    // 카테고리별 검색 키워드
+    // 카테고리별 검색 키워드 정의
     const categoryKeywords = {
       food: ['공유냉장고', '무료급식소'],
       play: ['공원', '박물관'],
       rest: ['도서관', '청소년문화의집']
     };
 
-    // 지도 및 검색 제어 변수
+    // 상태 제어 변수
     let currentCategory = 'food';
     let map;
     let places;
@@ -229,18 +229,18 @@
     let searchNumber = 0;
     let moneyMarkerImage = null;
 
-    // DOM 요소 참조
+    // DOM 요소
     const searchInput = document.getElementById("searchInput");
     const searchButton = document.getElementById("searchButton");
     const resultList = document.getElementById("resultList");
     const statusMessage = document.getElementById("statusMessage");
 
-    // 상태 메시지 출력 함수
+    // 상태 메시지 출력
     function showMessage(message) {
       statusMessage.textContent = message;
     }
 
-    // 지폐 모양 커스텀 마커 이미지 생성
+    // 지폐 모양 커스텀 마커 생성 함수
     function createMoneyMarkerImage() {
       const svgString = `
         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
@@ -260,7 +260,7 @@
       moneyMarkerImage = new kakao.maps.MarkerImage(svgUrl, imageSize, imageOption);
     }
 
-    // 카카오 지도 SDK 동적 로드
+    // SDK 불러오기
     function loadKakaoMap() {
       const script = document.createElement("script");
       script.src =
@@ -280,7 +280,7 @@
       };
 
       script.onerror = function () {
-        showMessage("지도 로딩 실패! Live Server 환경 및 카카오 Web 플랫폼 도메인을 확인하세요.");
+        showMessage("지도 로딩 실패! 플랫폼 도메인 환경을 확인하세요.");
       };
 
       document.head.appendChild(script);
@@ -306,7 +306,7 @@
       getCurrentLocation();
     }
 
-    // 위치 파악
+    // 위치 파악 및 검색 실행
     function getCurrentLocation() {
       if (!navigator.geolocation) {
         showMessage("위치 권한이 없어 기본 위치 기준으로 검색합니다.");
@@ -343,7 +343,7 @@
       );
     }
 
-    // 마커 및 정보창 초기화
+    // 기존 마커 및 팝업 지우기
     function clearMarkers() {
       markers.forEach(function (marker) {
         marker.setMap(null);
@@ -352,7 +352,7 @@
       infoWindow.close();
     }
 
-    // HTML 특수문자 안전 인코딩
+    // 특수문자 이스케이프
     function escapeHtml(value) {
       return String(value).replace(/[&<>"']/g, function (character) {
         const characters = {
@@ -366,7 +366,7 @@
       });
     }
 
-    // 탭 변경
+    // 탭 변경시 실행
     function switchCategory(categoryKey, clickEvent) {
       currentCategory = categoryKey;
 
@@ -380,7 +380,7 @@
       searchCategory(categoryKey);
     }
 
-    // 카테고리 자동 검색 (현재 지도 화면 중심 기준)
+    // 카테고리 키워드 기반 자동 검색
     function searchCategory(categoryKey) {
       const keywords = categoryKeywords[categoryKey];
       if (!keywords || !map || !places) return;
@@ -411,7 +411,7 @@
                 new Map(combinedResults.map(item => [item.id, item])).values()
               );
               displayPlaces(uniqueResults);
-              showMessage(`총 ${uniqueResults.length}개의 추천 시설을 찾았습니다.`);
+              showMessage(`총 ${uniqueResults.length}개의 무료 추천 시설을 찾았습니다.`);
             } else {
               showMessage("주변에 검색된 시설이 없습니다. 검색창에 동/구 이름을 직접 입력해보세요.");
             }
@@ -422,7 +422,7 @@
       });
     }
 
-    // 주소 및 장소 직접 검색 기능
+    // 장소/주소 직접 검색
     function searchPlaces() {
       const keyword = searchInput.value.trim();
 
@@ -436,7 +436,6 @@
       showMessage(`'${keyword}' 검색 중...`);
       const requestNumber = ++searchNumber;
 
-      // 주소 또는 장소 키워드 검색
       places.keywordSearch(keyword, function (data, status) {
         if (requestNumber !== searchNumber) return;
 
@@ -446,7 +445,6 @@
         if (status === kakao.maps.services.Status.OK) {
           displayPlaces(data);
 
-          // 검색 결과의 첫번째 장소 위치로 지도 이동
           const firstBounds = new kakao.maps.LatLngBounds();
           data.forEach(item => {
             firstBounds.extend(new kakao.maps.LatLng(Number(item.y), Number(item.x)));
@@ -462,12 +460,12 @@
       });
     }
 
-    // 마커 및 결과 리스트 출력
+    // 지도 및 리스트에 마커와 정보 출력
     function displayPlaces(data) {
       data.forEach(function (place) {
         const placePosition = new kakao.maps.LatLng(Number(place.y), Number(place.x));
 
-        // 지폐 커스텀 마커 적용
+        // 커스텀 지폐 마커 생성
         const marker = new kakao.maps.Marker({
           map: map,
           position: placePosition,
@@ -488,7 +486,7 @@
 
         resultList.appendChild(listItem);
 
-        // 선택 이벤트 (지도의 중심 이동 및 팝업)
+        // 마커/리스트 클릭 시 팝업 및 위치 이동
         function selectPlace() {
           map.setCenter(placePosition);
 
@@ -519,7 +517,7 @@
       }
     });
 
-    // 지도 로딩 실행
+    // 실행 시작
     loadKakaoMap();
   </script>
 
